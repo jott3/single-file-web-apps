@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<!--
+---------------------------------------------------------------------
+book-n-drive.html
+Author: J.Otten     
+Date: 2021-12-02
+---------------------------------------------------------------------
+Changes:
+2021-12-06  initial version
+2022-01-16  updated prices for cityflitzer; rate: added tmin&tinc
+2022-02-12  increased fonts
+2022-03-26  instroduced kmDelta=0.03 for km price changes 1st April
+---------------------------------------------------------------------
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>book-n-drive Rechner</title>
+    <style>
+        * { font-family: arial; }
+        body {
+            max-width: 100%;
+        }
+        h1 {
+            background-color: rgb(187,27,16);
+            font-size: 1.8em;
+            color: white;
+            text-align: center;
+            border-radius: 1em;
+            padding: 0 0.5em;
+            margin: 0;
+        }
+        #form {
+            font-size: large;
+            background-color: lightgray;
+            border-radius: 1em;
+            padding: 0.3em;
+            margin: 0.5em 0;
+        }
+        label[id*="label"]{
+            font-weight: bold;
+            display: inline-block;
+            width: 7.5em;
+            margin: 0.5em;
+        }
+        #label-time, #label-km {
+            width: 5em;
+        }
+        #time {
+            width: 3.5em;
+        }
+        #km {
+            width: 4em;
+        }
+        input, select {
+            font-size: large;
+        }
+        .hour-day {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        button {
+            font-size: large;
+            display: block;
+            margin: 0.5em auto;
+            border-radius: 1em;
+        }
+        table {
+            width: 100%;
+            background-color: gray;
+            font-size: large;
+            border-radius: 1em;
+            padding: 0.5em;
+        }
+        th {
+            background-color: rgb(187,27,16);
+            color: white;
+            padding: 0.4em;
+        }
+        td {
+            background-color: lightgray;
+            color: black;
+            padding: 0.4em;
+        }
+        #row-total {
+            font-weight: bold;
+        }
+        td[id*="-"] {
+            text-align: right;
+        }
+        footer {
+            font-size: 0.6em;
+            background-color: lightgray;
+            padding: 0.2em 2em;
+            margin: 2em 0;
+            border-radius: 1em;
+        }
+        .date {
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>book-n-drive Rechner</h1>
+    </header>
+    <div id="form">
+        <div>
+            <label for="cat" id="label-cat">Fahrzeugklasse:</label>
+            <select name="cat" id="cat">
+                <option value="cf">CityFlitzer</option>
+                <option value="xs">XS (VW Up)</option>
+                <option value="s">S (Corsa)</option>
+                <option value="m">M (Astra,Golf)</option>
+                <option value="l">L (Transporter)</option>
+            </select>
+        </div>
+        <div>
+            <label for="time" id="label-time">Fahrtzeit:</label>
+            <input type="number" id="time" value="1" min="1" step="0.25">
+            <div class="hour-day">
+                <div>
+                    <input type="radio" name="unit" id="hour" value="h" checked>
+                    <label for="hour">Stunden</label>
+                </div>
+                <div>
+                    <input type="radio" name="unit" id="day" value="d">
+                    <label for="day">Tage</label>
+                </div>
+            </div>
+        </div>
+        <div>
+            <label for="km" id="label-km">Kilometer:</label>
+            <input type="number" id="km" value="10" min="0" step="5">
+        </div>
+        <div>
+            <button id="reset">Zurücksetzen</button>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tarif</th><th>Ehren</th><th>Basis</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="row-total">
+                <td>Gesamtpreis</td><td id="ehren-tot">0€</td><td id="basis-tot">0€</td>
+            </tr>
+            <tr>
+                <td>Grundpreis</td><td id="ehren-base">0€</td><td id="basis-base">0€</td>
+            </tr>
+            <tr>
+                <td>Zeitpreis</td><td id="ehren-time">0€</td><td id="basis-time">0€</td>
+            </tr>
+            <tr>
+                <td>km-Preis</td><td id="ehren-km">0€</td><td id="basis-km">0€</td>
+            </tr>
+        </tbody>
+    </table>
+    <footer>
+        <a href="https://jott.w3spaces.com/apps/book-n-drive.html.txt" download="book-n-drive.html">Download book-n-drive.html</a>
+        <span class="date">2022-03-26</span>
+    </footer>
+    <script>
+//========================================================================
+//------        
+// RATES
+//------
+const kmDelta = 0.03;             /* 1.4.2022 */
+const rates = {
+    ehren: {
+        base: 0,
+        cf : { /* City-Flitzer */
+            h:     1.8,             /* € pro Stunde */
+            d:     27.0,            /* € pro Tag */
+            km:    0.29+kmDelta,    /* € pro Kilometer */
+            km51:  0.29+kmDelta,    /* € ab 51. Kilometer */
+            tmin:  1,               /* Mindestmietdauer in Stunden */
+            tinc:  0.25        },   /* Zeittaktung in Stunden */
+        xs : {
+            h:     2.64 *0.95,
+            d:     26.4 *0.95,
+            km:    0.29+kmDelta,
+            km51:  0.24+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        s : {
+            h:     3.52 *0.95,
+            d:     35.2 *0.95,
+            km:    0.31+kmDelta,
+            km51:  0.25+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        m : {
+            h:     4.40 *0.95,
+            d:     44.0 *0.95,
+            km:    0.32+kmDelta,
+            km51:  0.27+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        l : {
+            h:     5.28 *0.95,
+            d:     52.8 *0.95,
+            km:    0.35+kmDelta,
+            km51:  0.29+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+    },
+    basis: {
+        base: 2,
+        cf : { /* City-Flitzer */
+            h:     2.4,
+            d:     36.0,
+            km:    0.29+kmDelta,
+            km51:  0.29+kmDelta,
+            tmin:  1.0,
+            tinc:  0.25         },
+        xs : {
+            h:     3.30,
+            d:     33.0,
+            km:    0.29+kmDelta,
+            km51:  0.24+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        s : {
+            h:     4.40,
+            d:     44.0,
+            km:    0.31+kmDelta,
+            km51:  0.25+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        m : {
+            h:     5.50,
+            d:     55.0,
+            km:    0.33+kmDelta,
+            km51:  0.27+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+        l : {
+            h:     6.60,
+            d:     66.0,
+            km:    0.36+kmDelta,
+            km51:  0.29+kmDelta,
+            tmin:  0.5,
+            tinc:  0.5         },
+    }
+}
+//----------
+// FUNCTIONS
+//----------        
+function initTable() {
+    // Set initial category, time, km
+    cat   = 'cf';  // City Flitzer
+    time  = 1;     // 1 Stunde
+    km    = 10;    // 10 km
+    hourFlag = true;  // Anzeige:Stunden
+    // Update values in HTML
+    htmlCat.value  = cat;
+    htmlTime.value = time; // .toString();
+    htmlKm.value   = km;
+    htmlHour.checked = hourFlag;
+    // Re-calculate table
+    updateTable();
+}
+function updateTable() {
+    // Get (and round) current values
+    cat  = htmlCat.value;
+    time = Number( htmlTime.value) ;
+    hourFlag = htmlHour.checked;
+    let hours = hourFlag ? time : 24 * Math.ceil( time );
+    km  = Math.ceil( Number( htmlKm.value ) );
+    // Update HTML form
+    htmlStep = hourFlag ? htmlTime.min = rates['ehren'][cat].tmin : 1;
+    
+    // Calculate + update HTML table fields
+    for ( const rate of Object.keys( rates ) ) {
+        // BASE COSTS
+        const cBase = rates[ rate ].base;
+        document.getElementById(rate+'-base').textContent = eu.format(cBase);
+        // Car object
+        const car = rates[ rate ][ cat ];
+        // TIME COSTS (consider min. time and time increment)
+        hours = Math.ceil( Math.max( hours, car.tmin ) / car.tinc ) * car.tinc;
+        // console.log( rate, cat, hours);
+        const cTimeD = Math.floor( hours / 24) * car.d;
+        const cTimeH = Math.min( car.d, (hours % 24) * car.h );
+        const cTime = cTimeD + cTimeH;
+        document.getElementById(rate+'-time').textContent = eu.format(cTime);
+        // KM COSTS
+        const cKm = km <= 50 ? km*car.km : 50*car.km + (km-50)*car.km51;
+        document.getElementById(rate+'-km').textContent = eu.format(cKm);
+        // TOTAL COSTS
+        const cTot =  cBase + cTime + cKm;
+        document.getElementById(rate+'-tot').textContent = eu.format(cTot);
+    }
+}
+
+//--------------
+// HTML Elements
+//--------------
+htmlCat  = document.getElementById('cat');
+htmlTime = document.getElementById('time');
+htmlKm   = document.getElementById('km');
+htmlHour = document.getElementById('hour');
+htmlDay  = document.getElementById('day');
+htmlReset = document.getElementById('reset');
+
+//----------------        
+// Event Listeners
+//----------------        
+htmlCat.addEventListener(  'change', updateTable );
+htmlTime.addEventListener( 'change', updateTable );
+htmlTime.addEventListener( 'keydown', () => setTimeout( updateTable, 100 ) );
+htmlKm.addEventListener(   'change', updateTable );
+htmlKm.addEventListener(   'keydown', () => setTimeout( updateTable, 100 ) );
+htmlHour.addEventListener( 'change', updateTable );
+htmlDay.addEventListener(  'change', updateTable );
+htmlReset.addEventListener('click',  initTable );
+
+//-----
+// MAIN
+//-----
+// Currency formatting
+const eu = Intl.NumberFormat( 'de-DE', { 
+    style:   "currency",
+    currency: "EUR"      } );
+// Declare variables and initialize table
+let cat, time, km, hourFlag;
+initTable();
+
+//========================================================================
+    </script>
+</body>
+</html>
