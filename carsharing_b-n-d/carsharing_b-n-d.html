@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ---------------------------------------------------------------------
-book-n-drive.html
+carsharing_b-n-d.html
 Author: J.Otten     
 Date: 2021-12-02
 ---------------------------------------------------------------------
@@ -10,6 +10,8 @@ Changes:
 2022-01-16  updated prices for cityflitzer; rate: added tmin&tinc
 2022-02-12  increased fonts
 2022-03-26  instroduced kmDelta=0.03 for km price changes 1st April
+2023-11-10  set kmDelta=0-02
+2023-11-20  reduced font size of title
 ---------------------------------------------------------------------
 -->
 <html lang="en">
@@ -25,7 +27,7 @@ Changes:
         }
         h1 {
             background-color: rgb(187,27,16);
-            font-size: 1.8em;
+            font-size: x-large;
             color: white;
             text-align: center;
             border-radius: 1em;
@@ -104,7 +106,7 @@ Changes:
 </head>
 <body>
     <header>
-        <h1>book-n-drive Rechner</h1>
+        <h1>Carsharing b-n-d Rechner</h1>
     </header>
     <div id="form">
         <div>
@@ -161,15 +163,16 @@ Changes:
         </tbody>
     </table>
     <footer>
-        <a href="https://jott.w3spaces.com/apps/book-n-drive.html.txt" download="book-n-drive.html">Download book-n-drive.html</a>
-        <span class="date">2022-03-26</span>
+        <!-- <a href="https://jott.w3spaces.com/apps/book-n-drive.html.txt" download="book-n-drive.html">Download book-n-drive.html</a> -->
+        <span class="date">2023-11-20</span>
     </footer>
     <script>
 //========================================================================
 //------        
 // RATES
 //------
-const kmDelta = 0.03;             /* 1.4.2022 */
+// const kmDelta = 0.03;          /* 1.4.2022 */
+const kmDelta = 0.02;             /* 1.2.2023 */
 const rates = {
     ehren: {
         base: 0,
@@ -197,14 +200,14 @@ const rates = {
         m : {
             h:     4.40 *0.95,
             d:     44.0 *0.95,
-            km:    0.32+kmDelta,
+            km:    0.33+kmDelta,
             km51:  0.27+kmDelta,
             tmin:  0.5,
             tinc:  0.5         },
         l : {
             h:     5.28 *0.95,
             d:     52.8 *0.95,
-            km:    0.35+kmDelta,
+            km:    0.36+kmDelta,
             km51:  0.29+kmDelta,
             tmin:  0.5,
             tinc:  0.5         },
